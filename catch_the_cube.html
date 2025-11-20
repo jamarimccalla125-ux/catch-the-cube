@@ -6,10 +6,11 @@
   <style>
     body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; }
     #game { background: #222; display: block; margin: 0 auto; }
-    #score, #coins, #highscore { position: absolute; top: 10px; color: white; font-size: 20px; }
+    #score, #coins, #highscore, #boostsUI { position: absolute; top: 10px; color: white; font-size: 20px; }
     #score { left: 10px; }
     #coins { right: 10px; }
     #highscore { left: 50%; transform: translateX(-50%); }
+    #boostsUI { right: 10px; top: 40px; }
     #death, #shop, #bossbar, #menu { position: absolute; color: white; text-align: center; }
     #death { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; display: none; }
     #death button, #shop button, #menu button { margin-top: 20px; font-size: 20px; padding: 10px 20px; cursor: pointer; }
@@ -29,6 +30,7 @@
   <div id="score">score: 0</div>
   <div id="highscore">high score: 0</div>
   <div id="coins">coins: 0</div>
+  <div id="boostsUI">boosts: 0</div>
   <div id="bossbar"><div id="bosshealth"></div></div>
   <div id="death">you died 💀<br><button onclick="restart()">retry</button> <button onclick="openShop()">shop</button></div>
 
@@ -51,11 +53,10 @@
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-
     const menuCanvas = document.getElementById('menuCanvas');
     const menuCtx = menuCanvas.getContext('2d');
 
-    let player, cubes, score, coins, keys, dead, skin, boss, bossActive, highscore, gameStarted;
+    let player, cubes, score, coins, keys, dead, skin, boss, bossActive, highscore, gameStarted, boosts;
     let menuCubes = [];
 
     highscore = Number(localStorage.getItem('cube_highscore')) || 0;
@@ -63,7 +64,9 @@
     document.getElementById('menuHighScore').innerText = 'High Score: ' + highscore;
 
     function reset() {
-      player = { x: 280, y: 350, w: 40, h: 40, speed: 7 };
+      player = { x: 280, y: 350, w: 40, h: 40, baseSpeed: 7, speed: 7 };
+      boosts = 0;
+      updateBoostsUI();
       cubes = [];
       for (let i = 0; i < 2; i++) addCube();
       score = 0;
@@ -77,15 +80,29 @@
       document.getElementById('bossbar').style.display = 'none';
     }
 
-    function addCube() { cubes.push({ x: Math.random()*560, y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 }); }
+    function updateBoostsUI() { document.getElementById('boostsUI').innerText = 'boosts: ' + boosts; }
+
+    function addCube() {
+      let maxOffset = 150;
+      let x1 = Math.random() * (canvas.width - 40);
+      let x2 = Math.min(canvas.width - 40, Math.max(0, x1 + (Math.random()*maxOffset*2 - maxOffset)));
+      if (cubes.length % 2 === 0) {
+        cubes.push({ x: x1, y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
+      } else {
+        cubes.push({ x: x2, y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
+      }
+    }
+
     function spawnBoss() { boss = { hp: 50, x: 200, y: 0, w: 200, h: 40 }; bossActive = true; document.getElementById('bossbar').style.display = 'block'; updateBossBar(); }
     function updateBossBar() { document.getElementById('bosshealth').style.width = (boss.hp / 50) * 100 + '%'; }
 
     function restart() { reset(); loop(); }
     function openShop() { document.getElementById('shop').style.display = 'block'; }
     function closeShop() { document.getElementById('shop').style.display = 'none'; }
+
     function buySkin(color) { if (coins >= 20) { coins -= 20; skin = color; updateCoins(); } }
-    function buySpeed() { if (coins >= 30) { coins -= 30; player.speed++; updateCoins(); } }
+    function buySpeed() { if (coins >= 30) { coins -= 30; player.baseSpeed++; player.speed = player.baseSpeed; boosts++; updateCoins(); updateBoostsUI(); } }
+
     function updateCoins() { document.getElementById('coins').innerText = 'coins: ' + coins; }
 
     document.addEventListener('keydown', e => { keys[e.key] = true; if (String(e.key).toLowerCase() === 'r' && dead) { restart(); } });
@@ -124,7 +141,6 @@
 
     function loop() { if (!dead && gameStarted) { update(); draw(); requestAnimationFrame(loop); } }
 
-    // menu animation
     for (let i = 0; i < 50; i++) menuCubes.push({ x: Math.random()*menuCanvas.width, y: Math.random()*menuCanvas.height, w: 20, h: 20, dx: Math.random()*2-1, dy: Math.random()*2-1, color: `hsl(${Math.random()*360}, 100%, 50%)` });
     function drawMenu() {
       menuCtx.clearRect(0, 0, menuCanvas.width, menuCanvas.height);
@@ -141,3 +157,4 @@
   </script>
 </body>
 </html>
+
