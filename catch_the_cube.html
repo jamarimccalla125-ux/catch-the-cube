@@ -68,7 +68,7 @@
       boosts = 0;
       updateBoostsUI();
       cubes = [];
-      for (let i = 0; i < 2; i++) addCube();
+      addCubePair();
       score = 0;
       coins = coins || 0;
       keys = {};
@@ -82,15 +82,12 @@
 
     function updateBoostsUI() { document.getElementById('boostsUI').innerText = 'boosts: ' + boosts; }
 
-    function addCube() {
-      let maxOffset = 150;
-      let x1 = Math.random() * (canvas.width - 40);
-      let x2 = Math.min(canvas.width - 40, Math.max(0, x1 + (Math.random()*maxOffset*2 - maxOffset)));
-      if (cubes.length % 2 === 0) {
-        cubes.push({ x: x1, y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
-      } else {
-        cubes.push({ x: x2, y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
-      }
+    function addCubePair() {
+      const centerX = Math.random() * (canvas.width - 160) + 80;
+      const offset = 60; // max distance between cubes
+      const positions = [centerX - offset, centerX + offset];
+      cubes.push({ x: positions[0], y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
+      cubes.push({ x: positions[1], y: -40, w: 40, h: 40, speed: 0.8 + Math.random() * 0.8 });
     }
 
     function spawnBoss() { boss = { hp: 50, x: 200, y: 0, w: 200, h: 40 }; bossActive = true; document.getElementById('bossbar').style.display = 'block'; updateBossBar(); }
@@ -125,9 +122,9 @@
       for (let c of cubes) {
         c.y += c.speed * speedModifier;
         if (c.y > 400) { dead = true; if (score > highscore) { highscore = score; localStorage.setItem('cube_highscore', highscore); document.getElementById('highscore').innerText = 'high score: ' + highscore; } document.getElementById('death').style.display = 'block'; }
-        if (intersect(player, c)) { score++; coins++; updateCoins(); document.getElementById('score').innerText = 'score: ' + score; c.y = -40; c.x = Math.random()*560; }
+        if (intersect(player, c)) { score++; coins++; updateCoins(); document.getElementById('score').innerText = 'score: ' + score; c.y = -40; c.x = player.x; }
       }
-      while (cubes.length < 2) addCube();
+      while (cubes.length < 2) addCubePair();
       if (score >= 20 && !bossActive) spawnBoss();
       if (bossActive) { boss.hp -= 0.5; updateBossBar(); if (boss.hp <= 0) { bossActive = false; document.getElementById('bossbar').style.display = 'none'; } }
     }
@@ -157,4 +154,3 @@
   </script>
 </body>
 </html>
-
